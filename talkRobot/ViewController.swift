@@ -7,14 +7,102 @@
 //
 
 import UIKit
+import Foundation
 
-class ViewController: UIViewController {
+class ChatViewController: UIViewController, UITextFieldDelegate, UITableViewDataSource, UITableViewDelegate {
+ 
+    @IBOutlet weak var talkListBlock: UITableView!
+    
 
+    @IBOutlet weak var inputBlock: UITextField!
+
+
+ 
+    @IBAction func dismissKeyboard(_ sender: UITapGestureRecognizer) {//NOTE:该UITapGestureRecognizer在storyboard上拖动的时候必须拖到UIView里面，不能直接放在顶部，否则无效
+        self.inputBlock.resignFirstResponder()
+    }
+   
+  
+    var talkData = ["How are you?","Fine"]
+    
+    func keyboardWillShow(_ notification: NSNotification) {
+        print("show")
+        
+        if let userInfo = notification.userInfo, let value = userInfo[UIKeyboardFrameEndUserInfoKey] as? NSValue, let duration = userInfo[UIKeyboardAnimationDurationUserInfoKey] as? Double, let curve = userInfo[UIKeyboardAnimationCurveUserInfoKey] as? UInt{
+            let keyboardFrame = value.cgRectValue
+            let intersection = self.view.frame.intersection(keyboardFrame) // 求当前view的frame与keyboardFrame的交集
+            let deltaY = intersection.height
+            print(deltaY)
+            UIView.animate(
+                withDuration: duration,
+                delay: 0.0,
+                options: UIViewAnimationOptions(rawValue: curve),
+                animations: { _ in
+                    
+                    self.view.frame = CGRect(x: 0, y: -deltaY, width: self.view.bounds.width, height: self.view.bounds.height)
+                    self.view.layoutIfNeeded()
+                    
+                },
+                completion: nil
+            )
+            
+        }
+        
+    }
+    func keyboardWillHide(_ notification: NSNotification) {
+        print("hide")
+        if let userInfo = notification.userInfo, let value = userInfo[UIKeyboardFrameEndUserInfoKey] as? NSValue, let duration = userInfo[UIKeyboardAnimationDurationUserInfoKey] as? Double, let curve = userInfo[UIKeyboardAnimationCurveUserInfoKey] as? UInt{
+            let keyboardFrame = value.cgRectValue
+            let intersection = self.view.frame.intersection(keyboardFrame) // 求当前view的frame与keyboardFrame的交集
+            let deltaY = intersection.height
+            print(deltaY)
+            UIView.animate(
+                withDuration: duration,
+                delay: 0.0,
+                options: UIViewAnimationOptions(rawValue: curve),
+                animations: { _ in
+                    
+                    self.view.frame = CGRect(x: 0, y: deltaY, width: self.view.bounds.width, height: self.view.bounds.height)
+                    self.view.layoutIfNeeded()
+                    
+            },
+                completion: nil
+            )
+            
+        }
+
+    }
+    
+   
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return self.talkData.count
+    }
+ 
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Talk", for: indexPath)
+        print(cell)
+        cell.textLabel?.text = talkData[indexPath.row]
+        return cell
+    }
+    
+  
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(self.keyboardWillShow(_:)), name:NSNotification.Name.UIKeyboardWillShow, object: nil)
+        
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(self.keyboardWillHide(_:)), name:NSNotification.Name.UIKeyboardWillHide, object: nil)
+        
+        self.talkListBlock.delegate = self
+        self.talkListBlock.dataSource = self // MARK:两个协议代理，一个也不能少
+        
     }
 
+    
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
